@@ -32,6 +32,3 @@ __pycache__/
 # OS Metadata
 .DS_Store
 Thumbs.db
-
-# Script tải data
-scripts/download_data.py
