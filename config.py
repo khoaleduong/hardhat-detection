@@ -54,7 +54,7 @@ CLASS_OFFSET = 1
 # DATALOADER
 # ============================================================
 
-BATCH_SIZE = 12
+BATCH_SIZE = 16
 NUM_WORKERS = 2
 PIN_MEMORY = torch.cuda.is_available()
 
