@@ -5,7 +5,7 @@ from torchvision.models.detection import FasterRCNN_ResNet50_FPN_Weights
 # num_classes: background + helmet + head + person
 # default trainable_backbone_layers: 5
 
-def build_model(num_classes, pretrained=True, trainable_backbone_layers=3):
+def build_model(num_classes, pretrained=True, trainable_backbone_layers=2):
     if num_classes < 2:
         raise ValueError("num_classes must include background and at least one foreground class")
 

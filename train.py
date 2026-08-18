@@ -85,8 +85,8 @@ def main():
 
     # 2. Data
     train_loader, valid_loader = build_dataloader(data_dir=DATA_DIR, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY, class_offset=CLASS_OFFSET, num_classes=NUM_CLASSES)
-    print(f"Train samples: {len(train_loader.dataset)}")
-    print(f"Valid samples: {len(valid_loader.dataset)}")
+    print(f"Train samples: {len(train_loader.dataset)}") # type: ignore
+    print(f"Valid samples: {len(valid_loader.dataset)}") # type: ignore
 
     # 3. Model
     model = build_model(num_classes=NUM_CLASSES, pretrained=PRETRAINED, trainable_backbone_layers=TRAINABLE_BACKBONE_LAYERS)
@@ -111,7 +111,7 @@ def main():
 
     if LAST_MODEL_PATH.exists():
         print(f"Checkpoint found: {LAST_MODEL_PATH}")
-        last_epoch, best_loss = load_checkpoint(checkpoint_path=LAST_MODEL_PATH, model=model, optimizer=optimizer, scheduler=scheduler, device=DEVICE, scaler=scaler)
+        last_epoch, best_loss = load_checkpoint(checkpoint_path=LAST_MODEL_PATH, model=model, optimizer=optimizer, scheduler=scheduler, device=DEVICE, scaler=scaler) # type: ignore
         start_epoch = last_epoch + 1
         print(f"Resume training from epoch {start_epoch}")
 
