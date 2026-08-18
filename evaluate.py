@@ -27,7 +27,7 @@ def main():
     model.to(device)
 
     # Load best checkpoint
-    load_checkpoint(checkpoint_path="checkpoints/best_model.pth", model=model, device=device)  # type: ignore
+    load_checkpoint(checkpoint_path=BEST_MODEL_PATH, model=model, device=device)  # type: ignore
 
     # Evaluation
     evaluate(model=model, loader=valid_loader, device=device, class_names=CLASS_NAMES)

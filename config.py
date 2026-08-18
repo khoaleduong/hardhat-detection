@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import torch
@@ -10,7 +11,12 @@ import torch
 ROOT_DIR = Path(__file__).resolve().parent
 
 DATA_DIR = ROOT_DIR / "data"
-CHECKPOINT_DIR = ROOT_DIR / "checkpoints"
+CHECKPOINT_DIR = Path(
+    os.getenv(
+        "CHECKPOINT_DIR",
+        ROOT_DIR / "checkpoints",
+    )
+)
 
 TRAIN_IMAGE_DIR = DATA_DIR / "train" / "images"
 TRAIN_LABEL_DIR = DATA_DIR / "train" / "labels"
