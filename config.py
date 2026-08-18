@@ -54,7 +54,7 @@ CLASS_OFFSET = 1
 # DATALOADER
 # ============================================================
 
-BATCH_SIZE = 8
+BATCH_SIZE = 12
 NUM_WORKERS = 2
 PIN_MEMORY = torch.cuda.is_available()
 
@@ -70,14 +70,14 @@ MODEL_NAME = "fasterrcnn_resnet50_fpn"
 
 PRETRAINED = True
 
-TRAINABLE_BACKBONE_LAYERS = 3
+TRAINABLE_BACKBONE_LAYERS = 2
 
 
 # ============================================================
 # TRAINING
 # ============================================================
 
-NUM_EPOCHS = 20
+NUM_EPOCHS = 10
 
 LEARNING_RATE = 0.005
 MOMENTUM = 0.9
