@@ -1,9 +1,0 @@
-torch
-torchvision
-opencv-python
-matplotlib
-pandas
-numpy
-torchmetrics
-pycocotools
-tqdm
