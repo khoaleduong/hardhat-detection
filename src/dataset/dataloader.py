@@ -51,3 +51,26 @@ def build_dataloader(data_dir, batch_size, num_workers, pin_memory, class_offset
     )
 
     return train_loader, val_loader
+
+
+def build_test_dataloader(data_dir, batch_size, num_workers, pin_memory, class_offset, num_classes):
+    test_dataset = YOLODetectionDataset(
+        img_dir=data_dir / "test" / "images",
+        label_dir=data_dir / "test" / "labels",
+        transforms=get_val_transforms(),
+        class_offset=class_offset,
+        num_classes=num_classes,
+    )
+
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+        persistent_workers=num_workers > 0,
+        collate_fn=detection_collate_fn,
+        drop_last=False,
+    )
+
+    return test_loader
