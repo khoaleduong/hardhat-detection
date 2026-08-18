@@ -10,6 +10,7 @@ def save_checkpoint(
     epoch,
     best_loss,
     save_path,
+    scaler=None,
 ):
     save_path = Path(save_path)
 
@@ -30,6 +31,11 @@ def save_checkpoint(
             scheduler.state_dict()
         )
 
+    if scaler is not None:
+        checkpoint["scaler_state_dict"] = (
+            scaler.state_dict()
+        )
+
     # Atomic replacement
     tmp_path = save_path.with_suffix(
         save_path.suffix + ".tmp"
@@ -45,6 +51,7 @@ def load_checkpoint(
     optimizer=None,
     scheduler=None,
     device="cpu",
+    scaler=None,
 ):
     checkpoint_path = Path(checkpoint_path)
 
@@ -77,6 +84,14 @@ def load_checkpoint(
     ):
         scheduler.load_state_dict(
             checkpoint["scheduler_state_dict"]
+        )
+
+    if (
+        scaler is not None
+        and "scaler_state_dict" in checkpoint
+    ):
+        scaler.load_state_dict(
+            checkpoint["scaler_state_dict"]
         )
 
     epoch = checkpoint.get("epoch", 0)

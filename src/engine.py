@@ -4,23 +4,26 @@ from torchmetrics.detection.mean_ap import MeanAveragePrecision
 
 
 def move_targets_to_device(targets, device):
-    return [{key: value.to(device) if torch.is_tensor(value) else value for key, value in target.items()} for target in targets]
+    return [{key: value.to(device, non_blocking=True) if torch.is_tensor(value) else value for key, value in target.items()} for target in targets]
 
 
-def train_one_epoch(model, loader, optimizer, epoch, device, writer=None):
+def train_one_epoch(model, loader, optimizer, epoch, device, writer=None, scaler=None):
     model.train()
+    amp_enabled = torch.device(device).type == "cuda"
     total_loss = 0.0
     loss_meter = {}
     pbar = tqdm(loader, desc=f"Epoch {epoch:03d} [Train]")
 
     for step, (images, targets) in enumerate(pbar, 1):
         # Move data to device
-        images = [image.to(device) for image in images]
+        images = [image.to(device, non_blocking=True) for image in images]
         targets = move_targets_to_device(targets, device)
 
         # Forward
-        loss_dict = model(images, targets)
-        loss = sum(loss_dict.values())
+        optimizer.zero_grad(set_to_none=True)
+        with torch.autocast(device_type="cuda", enabled=amp_enabled):
+            loss_dict = model(images, targets)
+            loss = sum(loss_dict.values())
 
         # Catch NaN / Inf early
         if not torch.isfinite(loss):  # type: ignore
@@ -28,9 +31,13 @@ def train_one_epoch(model, loader, optimizer, epoch, device, writer=None):
             raise RuntimeError(f"Non-finite loss detected: {loss.item()}. Losses: {loss_details}")  # type: ignore
 
         # Backward
-        optimizer.zero_grad(set_to_none=True)
-        loss.backward()  # type: ignore
-        optimizer.step()
+        if scaler is not None and amp_enabled:
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            loss.backward()  # type: ignore
+            optimizer.step()
 
         # Metrics
         loss_value = loss.item()  # type: ignore
@@ -58,15 +65,17 @@ def train_one_epoch(model, loader, optimizer, epoch, device, writer=None):
 def validate_loss(model, loader, device, epoch, writer=None):
     """Compute Faster R-CNN validation loss. Note: TorchVision Faster R-CNN only returns loss_dict while the model is in training mode."""
     model.train()
+    amp_enabled = torch.device(device).type == "cuda"
     total_loss = 0.0
     loss_meter = {}
     pbar = tqdm(loader, desc=f"Epoch {epoch:03d} [Valid]")
 
     for step, (images, targets) in enumerate(pbar, 1):
-        images = [image.to(device) for image in images]
+        images = [image.to(device, non_blocking=True) for image in images]
         targets = move_targets_to_device(targets, device)
-        loss_dict = model(images, targets)
-        loss = sum(loss_dict.values())
+        with torch.autocast(device_type="cuda", enabled=amp_enabled):
+            loss_dict = model(images, targets)
+            loss = sum(loss_dict.values())
         loss_value = loss.item()  # type: ignore
         total_loss += loss_value
         for name, value in loss_dict.items():
@@ -88,12 +97,14 @@ def validate_loss(model, loader, device, epoch, writer=None):
 @torch.no_grad()
 def evaluate(model, loader, device, class_names=None):
     model.eval()
+    amp_enabled = torch.device(device).type == "cuda"
     metric = MeanAveragePrecision(box_format="xyxy", iou_type="bbox", class_metrics=True)
     pbar = tqdm(loader, desc="Evaluation")
 
     for images, targets in pbar:
-        images = [image.to(device) for image in images]
-        outputs = model(images)
+        images = [image.to(device, non_blocking=True) for image in images]
+        with torch.autocast(device_type="cuda", enabled=amp_enabled):
+            outputs = model(images)
 
         # TorchMetrics works on CPU
         outputs = [{key: value.cpu() for key, value in output.items()} for output in outputs]

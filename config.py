@@ -55,7 +55,7 @@ CLASS_OFFSET = 1
 # ============================================================
 
 BATCH_SIZE = 8
-NUM_WORKERS = 4
+NUM_WORKERS = 2
 PIN_MEMORY = torch.cuda.is_available()
 
 SHUFFLE_TRAIN = True

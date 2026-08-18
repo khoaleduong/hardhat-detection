@@ -34,6 +34,7 @@ def build_dataloader(data_dir, batch_size, num_workers, pin_memory, class_offset
         shuffle=True,
         num_workers=num_workers,
         pin_memory=pin_memory,
+        persistent_workers=num_workers > 0,
         collate_fn=detection_collate_fn,
         drop_last=False,
     )
@@ -44,6 +45,7 @@ def build_dataloader(data_dir, batch_size, num_workers, pin_memory, class_offset
         shuffle=False,
         num_workers=num_workers,
         pin_memory=pin_memory,
+        persistent_workers=num_workers > 0,
         collate_fn=detection_collate_fn,
         drop_last=False,
     )

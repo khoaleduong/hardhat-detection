@@ -18,7 +18,7 @@ def set_seed(seed: int):
         torch.cuda.manual_seed_all(seed)
 
 
-def train(model, train_loader, valid_loader, optimizer, scheduler, device, num_epochs, start_epoch=1, best_loss=float("inf"), writer=None, save_dir=CHECKPOINT_DIR):
+def train(model, train_loader, valid_loader, optimizer, scheduler, device, num_epochs, start_epoch=1, best_loss=float("inf"), writer=None, save_dir=CHECKPOINT_DIR, scaler=None):
     import shutil
     import time
 
@@ -33,7 +33,7 @@ def train(model, train_loader, valid_loader, optimizer, scheduler, device, num_e
         start_time = time.time()
 
         # 1. Train
-        train_metrics = train_one_epoch(model=model, loader=train_loader, optimizer=optimizer, device=device, epoch=epoch, writer=writer)
+        train_metrics = train_one_epoch(model=model, loader=train_loader, optimizer=optimizer, device=device, epoch=epoch, writer=writer, scaler=scaler)
 
         # 2. Validation loss
         valid_metrics = validate_loss(model=model, loader=valid_loader, device=device, epoch=epoch, writer=writer)
@@ -57,7 +57,7 @@ def train(model, train_loader, valid_loader, optimizer, scheduler, device, num_e
         last_path = save_dir / "last_model.pth"
         best_path = save_dir / "best_model.pth"
 
-        save_checkpoint(model=model, optimizer=optimizer, scheduler=scheduler, epoch=epoch, best_loss=best_loss, save_path=last_path)
+        save_checkpoint(model=model, optimizer=optimizer, scheduler=scheduler, epoch=epoch, best_loss=best_loss, save_path=last_path, scaler=scaler)
 
         if is_best:
             shutil.copyfile(last_path, best_path)
@@ -99,21 +99,24 @@ def main():
     # 5. Scheduler
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=LR_FACTOR, patience=LR_PATIENCE, min_lr=LR_MIN)
 
-    # 6. TensorBoard
+    # 6. Mixed precision
+    scaler = torch.amp.GradScaler("cuda", enabled=DEVICE.type == "cuda")
+
+    # 7. TensorBoard
     writer = SummaryWriter(log_dir="runs/hardhat_detection")
 
-    # 7. Resume checkpoint
+    # 8. Resume checkpoint
     start_epoch = 1
     best_loss = float("inf")
 
     if LAST_MODEL_PATH.exists():
         print(f"Checkpoint found: {LAST_MODEL_PATH}")
-        last_epoch, best_loss = load_checkpoint(checkpoint_path=LAST_MODEL_PATH, model=model, optimizer=optimizer, scheduler=scheduler, device=DEVICE)
+        last_epoch, best_loss = load_checkpoint(checkpoint_path=LAST_MODEL_PATH, model=model, optimizer=optimizer, scheduler=scheduler, device=DEVICE, scaler=scaler)
         start_epoch = last_epoch + 1
         print(f"Resume training from epoch {start_epoch}")
 
-    # 8. Train
-    train(model=model, train_loader=train_loader, valid_loader=valid_loader, optimizer=optimizer, scheduler=scheduler, device=DEVICE, num_epochs=NUM_EPOCHS, start_epoch=start_epoch, best_loss=best_loss, writer=writer, save_dir=CHECKPOINT_DIR)
+    # 9. Train
+    train(model=model, train_loader=train_loader, valid_loader=valid_loader, optimizer=optimizer, scheduler=scheduler, device=DEVICE, num_epochs=NUM_EPOCHS, start_epoch=start_epoch, best_loss=best_loss, writer=writer, save_dir=CHECKPOINT_DIR, scaler=scaler)
 
 
 if __name__ == "__main__":
